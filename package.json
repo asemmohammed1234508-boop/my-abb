@@ -1,0 +1,17 @@
+{
+  "name": "candy-admin-online",
+  "version": "1.0.0",
+  "description": "لعبة الحلوى مع لوحة تحكم أونلاين",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.4.11",
+    "electron-builder": "^24.9.1"
+  },
+  "allowScripts": {
+    "electron@33.4.11": true
+  }
+}

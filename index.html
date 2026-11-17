@@ -1,0 +1,401 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>Candy Saga - مفاجآت أونلاين</title>
+<style>
+  @import url('https://googleapis.com');
+  * { box-sizing: border-box; user-select: none; }
+  body {
+    font-family: 'Cairo', sans-serif;
+    background: radial-gradient(circle at top, #ff9a9e 0%, #fecfef 50%, #a18cd1 100%);
+    margin: 0; height: 100vh; display: flex; justify-content: center; align-items: center; overflow: hidden;
+  }
+  .container {
+    background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(10px); border: 4px solid #fff;
+    border-radius: 28px; box-shadow: 0 20px 50px rgba(0,0,0,0.25); width: 440px; padding: 20px;
+    text-align: center; position: relative; max-height: 95vh; overflow-y: auto;
+  }
+  .admin-lock {
+    position: absolute; top: 15px; left: 15px; background: #ffe5ec; border: 2px solid #ffb3c6;
+    border-radius: 50%; width: 38px; height: 38px; font-size: 17px; cursor: pointer; transition: 0.2s;
+  }
+  .admin-lock:hover { background: #ffccd5; transform: scale(1.1); }
+  h1 {
+    margin: 0 0 10px; font-size: 21px;
+    background: linear-gradient(45deg, #ff0844, #ffb199); -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  }
+  input[type="password"], input[type="text"], textarea {
+    width: 100%; border: 2px solid #ffc2d1; border-radius: 14px; padding: 10px 14px;
+    font-family: inherit; font-size: 15px; outline: none; margin-bottom: 10px;
+  }
+  textarea { height: 80px; resize: none; }
+  input:focus, textarea:focus { border-color: #ff4d6d; }
+  .file-upload {
+    display: block; background: #fff0f3; border: 2px dashed #ff4d6d; padding: 10px;
+    border-radius: 14px; cursor: pointer; color: #c9184a; font-weight: bold; font-size: 14px; margin-bottom: 10px;
+  }
+  .preview-thumb { max-height: 85px; border-radius: 10px; margin-bottom: 8px; border: 2px solid #ffb3c6; }
+  .btn {
+    background: linear-gradient(180deg, #ff5e7e 0%, #d90429 100%); color: white; border: none;
+    padding: 9px 20px; font-size: 14px; font-weight: 800; border-radius: 50px; cursor: pointer;
+    margin: 4px; box-shadow: 0 4px 0 #8d0801, 0 6px 12px rgba(217,4,41,0.3); font-family: inherit;
+  }
+  .btn:active { transform: translateY(3px); box-shadow: 0 2px 0 #8d0801; }
+  .btn-online { background: linear-gradient(180deg, #2ec4b6 0%, #007f5f 100%); box-shadow: 0 4px 0 #004b23, 0 6px 12px rgba(0,127,95,0.3); }
+  .btn-inbox { background: linear-gradient(180deg, #ff9f1c 0%, #e36414 100%); box-shadow: 0 4px 0 #9a031e, 0 6px 12px rgba(227,100,20,0.3); }
+  .btn-secondary { background: #8d99ae; box-shadow: 0 4px 0 #2b2d42; }
+  .hud { background: #fff0f3; border-radius: 18px; padding: 10px 15px; margin-bottom: 12px; border: 2px solid #ffccd5; }
+  .hud-top { display: flex; justify-content: space-between; font-weight: 800; font-size: 16px; color: #590d22; margin-bottom: 8px; }
+  .progress-wrap { background: #ffe5ec; height: 16px; border-radius: 10px; position: relative; border: 1px solid #ffb3c6; }
+  .progress-bar { height: 100%; width: 0%; background: linear-gradient(90deg, #ff758f, #ff0844); border-radius: 10px; transition: width 0.4s ease; }
+  .star { position: absolute; top: -6px; font-size: 20px; filter: grayscale(100%); transition: 0.3s; }
+  .star.earned { filter: grayscale(0%); transform: scale(1.25); }
+  .board {
+    display: grid; grid-template-columns: repeat(7, 50px); grid-template-rows: repeat(7, 50px); gap: 4px;
+    background: #590d22; padding: 8px; border-radius: 18px; justify-content: center; box-shadow: inset 0 5px 15px rgba(0,0,0,0.5);
+  }
+  .tile {
+    width: 50px; height: 50px; background: rgba(255, 255, 255, 0.12); border-radius: 10px;
+    display: flex; justify-content: center; align-items: center; font-size: 30px; cursor: grab;
+    position: relative; transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  .tile.selected { background: rgba(255, 255, 255, 0.4); transform: scale(1.15); box-shadow: 0 0 12px #fff; }
+  .tile.striped::after { content: '⚡'; position: absolute; font-size: 14px; bottom: 2px; right: 2px; background: #ffd166; border-radius: 50%; padding: 1px 3px; }
+  .tile.bomb { background: radial-gradient(circle, #ffbe0b, #fb5607, #ff006e); animation: pulse 1s infinite; }
+  @keyframes pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.08); } }
+  .pop { animation: popAnim 0.3s ease forwards; }
+  @keyframes popAnim { 0% { transform: scale(1); opacity: 1; } 100% { transform: scale(1.6); opacity: 0; } }
+  .shake { animation: shakeAnim 0.3s; }
+  @keyframes shakeAnim { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-6px); } 75% { transform: translateX(6px); } }
+  .hidden { display: none !important; }
+  .secret-card {
+    background: linear-gradient(135deg, #fff0f3, #ffe5ec); border: 3px dashed #ff4d6d; padding: 15px;
+    border-radius: 18px; font-size: 18px; font-weight: 600; color: #590d22; margin: 15px 0; white-space: pre-wrap; line-height: 1.6;
+  }
+  .secret-img { max-width: 100%; max-height: 220px; border-radius: 14px; margin-top: 12px; box-shadow: 0 8px 20px rgba(0,0,0,0.15); border: 3px solid #fff; }
+  .combo-text {
+    position: absolute; top: 45%; left: 50%; transform: translate(-50%, -50%); font-size: 36px; font-weight: 800;
+    color: #ffbe0b; text-shadow: 0 4px 10px rgba(0,0,0,0.6); pointer-events: none; animation: floatUp 0.9s ease forwards; z-index: 10;
+  }
+  @keyframes floatUp { 0% { opacity: 1; transform: translate(-50%, -50%) scale(0.5); } 50% { transform: translate(-50%, -80%) scale(1.2); } 100% { opacity: 0; transform: translate(-50%, -120%) scale(1); } }
+  .control-box { background: #fff0f3; border: 2px solid #ffb3c6; border-radius: 14px; padding: 10px; margin-bottom: 10px; font-size: 14px; color: #590d22; font-weight: bold; }
+</style>
+</head>
+<body>
+  <div id="game-view" class="container">
+    <button class="admin-lock" title="لوحة تحكم المسؤول" onclick="openPinModal()">🔒</button>
+    <h1>🍬 اجمع 1200 نقطة لفتح المفاجأة!</h1>
+    <div class="hud">
+      <div class="hud-top">
+        <span>النقاط: <span id="score-val">0</span> / 1200</span>
+        <span>الحركات: <span id="moves-val">45</span></span>
+      </div>
+      <div class="progress-wrap">
+        <div id="prog-bar" class="progress-bar"></div>
+        <span id="star1" class="star" style="right: 33%;">⭐</span>
+        <span id="star2" class="star" style="right: 66%;">⭐</span>
+        <span id="star3" class="star" style="right: 94%;">⭐</span>
+      </div>
+    </div>
+    <div id="board" class="board"></div>
+  </div>
+
+  <div id="pin-view" class="container hidden">
+    <h1>🔐 دخول المسؤول</h1>
+    <p style="font-size:14px; color:#555;">أدخل الرمز السري للتحكم في الرسائل والصلاحيات:</p>
+    <input type="password" id="pin-input" placeholder="الرمز السري..." maxlength="12" style="text-align:center; font-size:20px; letter-spacing:4px;">
+    <div>
+      <button class="btn" onclick="checkAdminPin()">دخول لوحة التحكم ⚙️</button>
+      <button class="btn btn-secondary" onclick="showView('game-view')">رجوع</button>
+    </div>
+  </div>
+
+  <div id="admin-view" class="container hidden">
+    <h1>👑 لوحة تحكم المسؤول</h1>
+    <div class="control-box">
+      <label style="cursor:pointer; display:flex; align-items:center; justify-content:center; gap:8px;">
+        <input type="checkbox" id="allow-reply-chk" onchange="toggleReplyPermission()">
+        <span>السماح لصديقي بإرسال رسائل لي الآن</span>
+      </label>
+      <small id="perm-status" style="color:#d90429; display:block; margin-top:4px;"></small>
+    </div>
+    <textarea id="admin-msg" placeholder="اكتب الرسالة السرية للدور الحالي..."></textarea>
+    <label class="file-upload">
+      🖼️ اختر صورة للدور الحالي (اختياري)
+      <input type="file" id="admin-file" accept="image/*" style="display:none;" onchange="handleImageUpload(event, 'admin-preview', 'admin-remove-btn')">
+    </label>
+    <img id="admin-preview" class="preview-thumb hidden" src="">
+    <button id="admin-remove-btn" class="hidden" onclick="removeImage('admin-file', 'admin-preview', 'admin-remove-btn')" style="background:none; border:none; color:red; cursor:pointer; font-size:12px; display:block; margin:0 auto 8px;">❌ إزالة الصورة</button>
+    <div>
+      <button id="admin-publish-btn" class="btn btn-online" onclick="publishAdminGift()">نشر رسالة الدور أونلاين 📡</button>
+      <button class="btn btn-inbox" onclick="openInbox()">📬 قراءة ردود صديقي</button>
+    </div>
+    <button class="btn btn-secondary" onclick="showView('game-view')">إغلاق اللوحة</button>
+  </div>
+
+  <div id="inbox-view" class="container hidden">
+    <h1>📬 آخر رسالة أرسلها صديقك</h1>
+    <div class="secret-card">
+      <div id="inbox-msg">جاري تحميل رد صديقك... ⏳</div>
+      <img id="inbox-img" class="secret-img hidden" src="">
+    </div>
+    <button class="btn btn-secondary" onclick="showView('admin-view')">رجوع للوحة التحكم</button>
+  </div>
+
+  <div id="win-view" class="container hidden">
+    <h1>🎉 مبروك الفوز! 🎉</h1>
+    <div class="secret-card">
+      <div id="final-msg">جاري فتح المفاجأة أونلاين... ⏳</div>
+      <img id="final-img" class="secret-img hidden" src="" alt="مفاجأة">
+    </div>
+    <button id="reply-btn" class="btn btn-online hidden" onclick="openReplyView()">✍️ أرسل رسالة للمسؤول</button>
+    <button class="btn btn-secondary" onclick="resetAndPlay()">العب مجدداً 🔄</button>
+  </div>
+
+  <div id="reply-view" class="container hidden">
+    <h1>💌 أرسل رسالة للمسؤول</h1>
+    <textarea id="reply-msg" placeholder="اكتب رسالتك هنا..."></textarea>
+    <label class="file-upload">
+      🖼️ أرفق صورة (اختياري)
+      <input type="file" id="reply-file" accept="image/*" style="display:none;" onchange="handleImageUpload(event, 'reply-preview', 'reply-remove-btn')">
+    </label>
+    <img id="reply-preview" class="preview-thumb hidden" src="">
+<script>
+  const FIREBASE_URL = "https://firebaseio.com";
+  const ADMIN_PIN = "2026";
+  let tempImageBase64 = "";
+
+  function encodeData(obj) {
+    const str = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(str);
+    let bin = "";
+    bytes.forEach(b => bin += String.fromCharCode(b));
+    return btoa(bin).split('').reverse().join('');
+  }
+
+  function decodeData(encodedStr) {
+    try {
+      const bin = atob(encodedStr.split('').reverse().join(''));
+      const bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+      return JSON.parse(new TextDecoder().decode(bytes));
+    } catch (e) { return null; }
+  }
+
+  function showView(viewId) {
+    ['game-view', 'pin-view', 'admin-view', 'inbox-view', 'win-view', 'reply-view'].forEach(id => {
+      document.getElementById(id).classList.add('hidden');
+    });
+    document.getElementById(viewId).classList.remove('hidden');
+  }
+
+  function openPinModal() {
+    document.getElementById('pin-input').value = '';
+    showView('pin-view');
+  }
+
+  async function checkAdminPin() {
+    const val = document.getElementById('pin-input').value;
+    if (val !== ADMIN_PIN) return alert("❌ الرمز السري غير صحيح!");
+    tempImageBase64 = "";
+    document.getElementById('admin-msg').value = "";
+    removeImage('admin-file', 'admin-preview', 'admin-remove-btn');
+    showView('admin-view');
+    try {
+      const res = await fetch(`${FIREBASE_URL}/settings/allowReply.json`);
+      const allowed = await res.json();
+      document.getElementById('allow-reply-chk').checked = !!allowed;
+      document.getElementById('perm-status').innerText = allowed ? "✅ صديقك مسموح له بالرد حالياً" : "🚫 الرد مغلق عن صديقك حالياً";
+    } catch (e) {}
+  }
+
+  async function toggleReplyPermission() {
+    const isChecked = document.getElementById('allow-reply-chk').checked;
+    const statusEl = document.getElementById('perm-status');
+    statusEl.innerText = "جاري التحديث... ⏳";
+    try {
+      await fetch(`${FIREBASE_URL}/settings/allowReply.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(isChecked)
+      });
+      statusEl.innerText = isChecked ? "✅ تم تفعيل الإرسال لصديقك" : "🚫 تم إيقاف الإرسال عن صديقك";
+    } catch (e) { statusEl.innerText = "❌ تعذر التحديث"; }
+  }
+
+  function openReplyView() {
+    tempImageBase64 = "";
+    document.getElementById('reply-msg').value = "";
+    removeImage('reply-file', 'reply-preview', 'reply-remove-btn');
+    showView('reply-view');
+  }
+
+  function handleImageUpload(event, previewId, removeBtnId) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const img = new Image();
+      img.onload = function() {
+        const canvas = document.createElement('canvas');
+        const maxW = 500;
+        const scale = Math.min(maxW / img.width, 1);
+        canvas.width = img.width * scale;
+        canvas.height = img.height * scale;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+        tempImageBase64 = canvas.toDataURL('image/jpeg', 0.75);
+        document.getElementById(previewId).src = tempImageBase64;
+        document.getElementById(previewId).classList.remove('hidden');
+        document.getElementById(removeBtnId).classList.remove('hidden');
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  function removeImage(inputId, previewId, removeBtnId) {
+    tempImageBase64 = "";
+    document.getElementById(inputId).value = "";
+    document.getElementById(previewId).classList.add('hidden');
+    document.getElementById(removeBtnId).classList.add('hidden');
+  }
+
+  async function publishAdminGift() {
+    const msg = document.getElementById('admin-msg').value.trim();
+    const btn = document.getElementById('admin-publish-btn');
+    if (!msg && !tempImageBase64) return alert("يرجى كتابة رسالة أو اختيار صورة أولاً!");
+    btn.disabled = true; btn.innerText = "جاري النشر... ⏳";
+    try {
+      const encrypted = encodeData({ message: msg, image: tempImageBase64, timestamp: Date.now() });
+      const res = await fetch(`${FIREBASE_URL}/adminGift.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blob: encrypted })
+      });
+      if (res.ok) { alert("✅ تم تشفير ونشر مفاجأة الدور أونلاين!"); showView('game-view'); }
+    } catch (e) { alert("❌ تأكد من الإنترنت!"); }
+    finally { btn.disabled = false; btn.innerText = "نشر رسالة الدور أونلاين 📡"; }
+  }
+
+  async function sendFriendReply() {
+    const msg = document.getElementById('reply-msg').value.trim();
+    const btn = document.getElementById('reply-publish-btn');
+    if (!msg && !tempImageBase64) return alert("اكتب رسالتك أو اختر صورة أولاً!");
+    btn.disabled = true; btn.innerText = "جاري الإرسال... ⏳";
+    try {
+      const permRes = await fetch(`${FIREBASE_URL}/settings/allowReply.json`);
+      const allowed = await permRes.json();
+      if (!allowed) { alert("🚫 المسؤول أوقف استقبال الرسائل حالياً."); showView('win-view'); return; }
+      const encrypted = encodeData({ message: msg, image: tempImageBase64, timestamp: Date.now() });
+      const res = await fetch(`${FIREBASE_URL}/friendReply.json`, {
+        method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ blob: encrypted })
+      });
+      if (res.ok) { alert("✅ تم إرسال رسالتك إلى المسؤول!"); showView('win-view'); }
+    } catch (e) { alert("❌ تعذر الإرسال."); }
+    finally { btn.disabled = false; btn.innerText = "إرسال الآن 🚀"; }
+  }
+
+  async function openInbox() {
+    showView('inbox-view');
+    const msgEl = document.getElementById('inbox-msg');
+    const imgEl = document.getElementById('inbox-img');
+    msgEl.innerText = "جاري جلب رد صديقك... ⏳"; imgEl.classList.add('hidden');
+    try {
+      const res = await fetch(`${FIREBASE_URL}/friendReply.json`);
+      const raw = await res.json();
+      const data = raw && raw.blob ? decodeData(raw.blob) : null;
+      if (data && (data.message || data.image)) {
+        msgEl.innerText = data.message || "(أرسل صورة بدون نص)";
+        if (data.image) { imgEl.src = data.image; imgEl.classList.remove('hidden'); }
+      } else { msgEl.innerText = "لا توجد ردود من صديقك حتى الآن."; }
+    } catch (e) { msgEl.innerText = "❌ تعذر الاتصال بالسيرفر."; }
+  }
+
+  async function loadSurpriseOnWin() {
+    showView('win-view');
+    const msgEl = document.getElementById('final-msg');
+    const imgEl = document.getElementById('final-img');
+    const replyBtn = document.getElementById('reply-btn');
+    msgEl.innerText = "جاري فتح المفاجأة أونلاين... ⏳"; imgEl.classList.add('hidden'); replyBtn.classList.add('hidden');
+    try {
+      const [giftRes, permRes] = await Promise.all([
+        fetch(`${FIREBASE_URL}/adminGift.json`), fetch(`${FIREBASE_URL}/settings/allowReply.json`)
+      ]);
+      const rawGift = await giftRes.json();
+      const allowReply = await permRes.json();
+      const gift = rawGift && rawGift.blob ? decodeData(rawGift.blob) : null;
+      if (gift && (gift.message || gift.image)) {
+        if (gift.message) { msgEl.innerText = gift.message; msgEl.classList.remove('hidden'); } else { msgEl.classList.add('hidden'); }
+        if (gift.image) { imgEl.src = gift.image; imgEl.classList.remove('hidden'); }
+      } else { msgEl.innerText = "مبروك الفوز! لا توجد رسالة محددة لهذا الدور حالياً."; }
+      if (allowReply) replyBtn.classList.remove('hidden');
+    } catch (e) { msgEl.innerText = "❌ تعذر الاتصال بالسيرفر."; }
+  }
+
+  const ITEMS = ['🍓', '🍋', '🍇', '🍏', '🫐', '🍬'];
+  const SIZE = 7, TARGET = 1200;
+  let grid = [], score = 0, moves = 45, selectedIdx = null, isProcessing = false, dragStartIdx = null;
+  window.onload = createBoard;
+
+  function resetAndPlay() {
+    score = 0; moves = 45;
+    document.querySelectorAll('.star').forEach(s => s.classList.remove('earned'));
+    updateHUD(); createBoard(); showView('game-view');
+  }
+
+  const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+  function playTone(freq, type = 'sine', duration = 0.15) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+    osc.type = type; osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+    gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+    osc.connect(gain); gain.connect(audioCtx.destination); osc.start(); osc.stop(audioCtx.currentTime + duration);
+  }
+
+  function createBoard() {
+    const boardEl = document.getElementById('board'); boardEl.innerHTML = ''; grid = [];
+    for (let i = 0; i < SIZE * SIZE; i++) {
+      const tile = document.createElement('div'); tile.className = 'tile'; tile.dataset.idx = i;
+      setTileData(tile, randomItem(), 'normal');
+      tile.addEventListener('mousedown', () => dragStartIdx = i);
+      tile.addEventListener('mouseup', () => {
+        if (dragStartIdx !== null && dragStartIdx !== i) attemptSwap(dragStartIdx, i);
+        else handleClick(i);
+        dragStartIdx = null;
+      });
+      boardEl.appendChild(tile); grid.push(tile);
+    }
+    while (findMatches().length > 0) findMatches().forEach(m => m.indices.forEach(idx => setTileData(grid[idx], randomItem(), 'normal')));
+  }
+
+  function setTileData(tile, emoji, special) {
+    tile.dataset.emoji = emoji; tile.dataset.special = special;
+    tile.innerText = special === 'bomb' ? '🌈' : emoji;
+    tile.classList.remove('striped', 'bomb');
+    if (special === 'striped') tile.classList.add('striped');
+    if (special === 'bomb') tile.classList.add('bomb');
+  }
+
+  function randomItem() { return ITEMS[Math.floor(Math.random() * ITEMS.length)]; }
+
+  function handleClick(idx) {
+    if (isProcessing) return;
+  function showCombo(text) {
+    const el = document.createElement('div');
+    el.className = 'combo-text';
+    el.innerText = text;
+    document.getElementById('game-view').appendChild(el);
+    setTimeout(() => el.remove(), 900);
+  }
+
+  function checkEndGame() {
+    if (score >= TARGET) {
+      playTone(600, 'triangle', 0.5);
+      loadSurpriseOnWin();
+    } else if (moves <= 0) {
+      alert("انتهت الحركات! حاول مرة أخرى لفتح المفاجأة.");
+      resetAndPlay();
+    }
+  }
+</script>
+</body>
+</html>
